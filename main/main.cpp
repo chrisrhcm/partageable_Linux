@@ -1,20 +1,72 @@
 
 #include <iostream>
-#include "Composant1.h"
-#include "Composant2.h"
+#include <dlfcn.h>
+#include <string>
+#include <stdio.h>
+
+static int calc(int data1, int data2, std::string composant){
+
+	int (*func)(int,int);
+	int value=0;
+	void *handle;
+
+	if(composant.compare("Composant1")==0){
+		handle = dlopen("./libComposant1.so", RTLD_LAZY);
+	}else if(composant.compare("Composant2")==0){
+		handle = dlopen("./libComposant2.so", RTLD_LAZY);
+	}
+	if (handle == NULL) {
+                /* fail to load the library */
+                fprintf(stderr, "Error: %s\n", dlerror());
+                return EXIT_FAILURE;
+	}
+
+
+	std::cout <<"composant utilisé : " << composant;
+
+	if(composant.compare("Composant1") == 0){
+		*(void **)(&func) = dlsym(handle,"composant1");
+		if(func == NULL){
+			printf("Error occured\n");
+                        printf("erreur dlsym : %s\n", dlerror());
+                        dlclose(handle);
+                        exit(EXIT_FAILURE);
+		}
+
+	}
+	else{
+		*(void **)(&func) = dlsym(handle, "composant2");
+		if(func == NULL){
+			printf("Error occured\n");
+                        printf("erreur dlsym : %s\n", dlerror());
+                        dlclose(handle);
+                        exit(EXIT_FAILURE);
+		}
+	}
+	value = func(data1,data2);
+	dlclose(handle);
+
+	return value;
+}
+
+
+
+
+
+
 
 int main(int argc, char ** argv)
 {
-	int data1=3;
-	int data2=5;
 
-	int valeur1;
-	int valeur2;
+	if(argc !=4) exit(EXIT_FAILURE);
+	int data1 = std::stoi(argv[2]);
+	int data2 = std::stoi(argv[3]);
 
-	valeur1=composant1(data1,data2);
+	int valeur=0;
 
-	valeur2=composant2(data1,data2);
+	
+	valeur=calc(data1,data2,argv[1]);
 
-	std::cout << getComposant1Version() << std::endl;
-	std::cout << "valeur 1 :" << valeur1 << " valeur 2 :" << valeur2 << std::endl;
+
+	std::cout << std::endl << "valeur :" << valeur << std::endl;
 }
